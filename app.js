@@ -23,4 +23,8 @@ app.use("/cart", cartRouter);
 app.use("/admins", adminRouter);
 app.use("/orders", orderRouter);
 
+app.get("/", (req, res) => {
+  res.send("🚀 Backend is live");
+});
+
 export default app;
