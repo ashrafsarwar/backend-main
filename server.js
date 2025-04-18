@@ -3,12 +3,17 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, (error) => {
-  if (error) {
-    console.log("Error: ", error);
-  } else {
-    console.log(`Server is running on port ${PORT}`);
-  }
+// Catch uncaught async errors
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err);
 });
+
+try {
+  app.listen(PORT, () => {
+    console.log(`✅ Server is running on port ${PORT}`);
+  });
+} catch (error) {
+  console.error("❌ Server failed to start:", error);
+}

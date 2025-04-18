@@ -9,14 +9,11 @@ import adminRouter from "./routes/adminRouter.js";
 import orderRouter from "./routes/orderRouter.js";
 import bodyParser from "body-parser";
 
-
-
 mongoDB();
 const app = express();
 
 app.use(express.json());
 app.use(cors());
-app.use(bodyParser.json());
 app.use("/images", express.static("uploads/images"));
 
 app.use("/", router);
