@@ -101,9 +101,9 @@ const getAdmins = async (req, res) => {
 
 const removeAdmin = async (req, res) => {
   try {
-    let { email, filename } = req.body;
+    const { email, filename } = req.body;
 
-    const imageName = path.basename(filename); // <-- This is key!
+    console.log(req.body);
 
     if (!email) {
       return res
@@ -113,35 +113,37 @@ const removeAdmin = async (req, res) => {
 
     const admin = await Admin.findOne({ email });
     if (!admin) {
-      return res.send({ success: false, message: "Admin not found" });
+      return res
+        .status(404)
+        .send({ success: false, message: "Admin not found" });
     }
 
-    const result = await Admin.deleteOne({ email });
-    if (result.deletedCount > 0) {
-      const filePath = path.join(__dirname, "../uploads/images", imageName);
+    // Handle file deletion if filename is provided
+    if (filename) {
+      const imageName = path.basename(filename); // extract just the filename
+      const filePath = path.join(__dirname, "../uploads/images", imageName); // absolute path to file
 
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.error("Error deleting file:", err);
-          return res.status(500).send({
-            success: false,
-            message: "Product removed, but image deletion failed",
-          });
-        }
-        return res.send({
-          success: true,
-          message: "Product and image deleted successfully",
+      // Check if file exists before deleting
+      if (fs.existsSync(filePath)) {
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error("Error deleting file:", err);
+          } else {
+            console.log("✅ File deleted:", filePath);
+          }
         });
-      });
-    } else {
-      return res.send({
-        success: false,
-        message: "Failed to delete the product",
-      });
+      } else {
+        console.warn("⚠️ File not found, cannot delete:", filePath);
+      }
     }
+
+    // Delete admin from DB
+    await Admin.deleteOne({ email });
+
+    res.send({ success: true, message: "Admin removed successfully" });
   } catch (error) {
-    console.error("Error:", error);
-    return res.status(500).send({ success: false, message: "Server error" });
+    console.error("❌ Error in removeAdmin:", error);
+    res.status(500).send({ success: false, message: "Internal server error" });
   }
 };
 

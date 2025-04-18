@@ -38,7 +38,11 @@ const removeProduct = async (req, res) => {
   try {
     let { id, filename } = req.body;
 
-    const imageName = path.basename(filename); // <-- This is key!
+    if (!id) {
+      return res
+        .status(400)
+        .send({ success: false, message: "Product ID is required" });
+    }
 
     const product = await Product.findOne({ id });
     if (!product) {
@@ -46,22 +50,32 @@ const removeProduct = async (req, res) => {
     }
 
     const result = await Product.deleteOne({ id });
+
     if (result.deletedCount > 0) {
+      const imageName = path.basename(filename);
       const filePath = path.join(__dirname, "../uploads/images", imageName);
 
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.error("Error deleting file:", err);
-          return res.status(500).send({
-            success: false,
-            message: "Product removed, but image deletion failed",
+      if (fs.existsSync(filePath)) {
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error("Error deleting file:", err);
+            return res.status(500).send({
+              success: false,
+              message: "Product removed, but image deletion failed",
+            });
+          }
+          return res.send({
+            success: true,
+            message: "Product and image deleted successfully",
           });
-        }
+        });
+      } else {
+        console.warn("⚠️ Image file not found:", filePath);
         return res.send({
           success: true,
-          message: "Product and image deleted successfully",
+          message: "Product deleted, but image file was not found",
         });
-      });
+      }
     } else {
       return res.send({
         success: false,
@@ -69,11 +83,10 @@ const removeProduct = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Error:", error);
+    console.error("❌ Error:", error);
     return res.status(500).send({ success: false, message: "Server error" });
   }
 };
-
 const getProducts = async (req, res) => {
   try {
     const products = await Product.find({});
